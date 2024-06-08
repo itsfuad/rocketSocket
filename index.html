@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,6 +38,21 @@
             font-size: 1.2em;
         }
 
+        /* Style for messages sent by the current user */
+        .chat-messages li.sent {
+            align-self: flex-end;
+            background-color: #007bff;
+            /* Light green */
+        }
+
+        /* Style for messages received from other users */
+        .chat-messages li.received {
+            align-self: flex-start;
+            background-color: #595959;
+            /* Light grey */
+        }
+
+
         .chat-messages {
             flex: 1;
             padding: 15px;
@@ -47,7 +63,9 @@
         .chat-messages ul {
             list-style: none;
             padding: 0;
+            display: flex;
             margin: 0;
+            flex-direction: column;
         }
 
         .chat-messages li {
@@ -127,26 +145,30 @@
                 box-shadow: none;
             }
 
-            .chat-input input, .room-form input {
+            .chat-input input,
+            .room-form input {
                 font-size: 0.9em;
             }
 
-            .chat-input button, .room-form button {
+            .chat-input button,
+            .room-form button {
                 font-size: 0.9em;
             }
         }
     </style>
 </head>
+
 <body>
-    
+
     <div class="chat-container">
-        <div class="chat-header">Rocket Client</div>
+        <div class="chat-header" id="roomHeader">Join a room to chat</div>
 
         <!-- Room Selection -->
-        <form id="roomForm" class="room-form">
+        <div id="roomControls" class="room-form">
             <input type="text" id="roomName" placeholder="Enter room name">
-            <button type="submit">Join Room</button>
-        </form>
+            <input type="text" id="username" placeholder="Enter your username">
+            <button id="actionButton">Join</button>
+        </div>
 
         <!-- Messages -->
         <div class="chat-messages" id="messages">
@@ -158,44 +180,42 @@
             <input type="text" id="message" placeholder="Type a message">
             <button type="submit">Send</button>
         </form>
+
     </div>
 
     <script>
-        let currentRoom = 'default';
+        let currentRoom = 'global';
         const ws = new WebSocket('ws://localhost:8080/ws');
 
         const form = document.getElementById('form');
         const message = document.getElementById('message');
         const messages = document.getElementById('messageList');
-        const roomForm = document.getElementById('roomForm');
+        const roomForm = document.getElementById('roomControls');
+        const usernameInput = document.getElementById('username');
         const roomName = document.getElementById('roomName');
+        const actionButton = document.getElementById('actionButton');
+        const roomHeader = document.getElementById('roomHeader');
 
         form.addEventListener('submit', (event) => {
             event.preventDefault();
-            if (message.value.trim() !== '') {
-                sendMessage(message.value);
-                message.value = '';
+            
+            if (message.value.trim() === '') {
+                return;
             }
+            sendMessage(message.value, usernameInput.value);
         });
 
-        roomForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            if (roomName.value.trim() !== '') {
+        actionButton.addEventListener('click', () => {
+            if (actionButton.textContent === 'Join') {
                 joinRoom(roomName.value);
-                roomName.value = '';
+            } else {
+                leaveRoom(currentRoom);
             }
         });
-
-        ws.onmessage = (message) => {
-            const li = document.createElement('li');
-            li.innerText = message.data;
-            messages.appendChild(li);
-            messages.scrollTop = messages.scrollHeight;
-        };
 
         ws.onopen = (e) => {
             console.log('Connected to the server', e);
-            joinRoom(currentRoom); // Automatically join the default room on connection
+            //joinRoom(currentRoom); // Automatically join the default room on connection
         };
 
         ws.onclose = () => {
@@ -206,8 +226,31 @@
             console.error(error);
         };
 
-        function sendMessage(msg) {
-            const data = JSON.stringify({ action: 'message', room: currentRoom, message: msg });
+        // Parse JSON object to extract username and message content
+        ws.onmessage = (message) => {
+            console.log('Received message:', message);
+            const data = JSON.parse(message.data);
+            const li = document.createElement('li');
+            li.innerText = `${data.username}: ${data.message}`;
+            // Apply different styling based on sender or receiver
+            if (data.username === usernameInput.value) {
+                li.classList.add('sent');
+            } else {
+                li.classList.add('received');
+            }
+            messages.appendChild(li);
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        // Modify sendMessage function to include username
+        function sendMessage(msg, username) {
+            const data = JSON.stringify({
+                action: 'message',
+                room: currentRoom,
+                username: username,
+                message: msg
+            });
+            console.log('Sending message:', data);
             ws.send(data);
         }
 
@@ -216,12 +259,22 @@
             ws.send(data);
             currentRoom = room;
             clearMessages();
+            roomHeader.textContent = `Connected to Room: ${room}`;
+            actionButton.style.backgroundColor = '#dc3545';
+            actionButton.textContent = 'Leave';
+
             console.log(`Joined room: ${room}`);
         }
 
         function leaveRoom(room) {
             const data = JSON.stringify({ action: 'leave', room: room });
             ws.send(data);
+            currentRoom = 'default';
+            clearMessages();
+            roomHeader.textContent = 'Join a room to chat';
+            actionButton.style.backgroundColor = '#28a745';
+            actionButton.textContent = 'Join';
+
             console.log(`Left room: ${room}`);
         }
 
@@ -233,4 +286,5 @@
     </script>
 
 </body>
+
 </html>

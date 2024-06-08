@@ -145,6 +145,12 @@ func (c *Client) readPump() {
 			if !ok {
 				continue
 			}
+			username, ok := msg["username"].(string)
+			if !ok {
+				username = "Anonymous"
+			}
+			//to JSON
+			message = fmt.Sprintf(`{"username":"%s","message":"%s"}`, username, message)
 			toRoom(room, []byte(message))
 		}
 	}
