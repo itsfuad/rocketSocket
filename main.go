@@ -96,14 +96,16 @@ func makeAcceptKey(key string) string {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
+func cleanUp(c *Client) {
+	mutex.Lock()
+	delete(clients, c)
+	leaveRoom(c, c.room)
+	mutex.Unlock()
+	c.conn.conn.Close()
+}
+
 func (c *Client) readPump() {
-	defer func() {
-		mutex.Lock()
-		delete(clients, c)
-		leaveRoom(c, c.room)
-		mutex.Unlock()
-		c.conn.conn.Close()
-	}()
+	defer cleanUp(c)
 	for {
 		_, message, err := readMessage(c.conn)
 		if err != nil {
