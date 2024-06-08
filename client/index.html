@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css"/>
+    <script defer type="module" src="./app.js"></script>
+    <title>Rocket Client</title>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="chat-header" id="roomHeader">Join a room to chat</div>
+
+        <!-- Room Selection -->
+        <div id="roomControls" class="room-form">
+            <input type="text" id="roomName" placeholder="Enter room name">
+            <input type="text" id="username" placeholder="Enter your username">
+            <button id="actionButton">Join</button>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="messages">
+            <ul id="messageList"></ul>
+        </div>
+
+        <!-- Form -->
+        <form id="form" class="chat-input">
+            <input type="text" id="message" placeholder="Type a message">
+            <button type="submit">Send</button>
+        </form>
+
+    </div>
+</body>
+</html>

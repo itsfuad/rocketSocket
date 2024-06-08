@@ -32,10 +32,14 @@ var broadcast = make(chan []byte)
 var mutex = &sync.Mutex{}
 
 func main() {
+
+	fs := http.FileServer(http.Dir("client"))
+
 	http.HandleFunc("/ws", handleConnections)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
+		//make the client folder the serving directory so that js and css files can be served
+		fs.ServeHTTP(w, r)
 	})
 
 	go handleMessages()
