@@ -12,9 +12,10 @@ import (
 )
 
 type Client struct {
-	conn *Conn
-	send chan []byte
-	room string
+    conn     *Conn
+    send     chan []byte
+    room     string
+    username string
 }
 
 type Conn struct {
@@ -104,6 +105,7 @@ func cleanUp(c *Client) {
 	mutex.Lock()
 	delete(clients, c)
 	leaveRoom(c, c.room)
+	handleLeave(c.room, c.username)
 	mutex.Unlock()
 	c.conn.conn.Close()
 }
@@ -138,11 +140,12 @@ func (c *Client) readPump() {
 
 			mutex.Lock()
 			leaveRoom(c, c.room)
-			joinRoom(c, room)
+			joinRoom(c, room, username)
 
 			//send joining message to room
 			message, _ := json.Marshal(map[string]interface{}{
 				"username": "Server",
+				"type": "join",
 				"message":   fmt.Sprintf("%s joined the room", username),
 			})
 
@@ -150,30 +153,23 @@ func (c *Client) readPump() {
 
 			mutex.Unlock()
 		case "leave":
+
 			room, ok := msg["room"].(string)
 			if !ok || room == "" {
 				continue
 			}
-
+		
 			username, ok := msg["username"].(string)
 			if !ok || username == "" {
 				continue
 			}
-
+		
 			mutex.Lock()
+			
 			leaveRoom(c, room)
-
-			//if any clients are left in the room, send leaving message
-			if _, ok := rooms[room]; ok {
-				message, _ := json.Marshal(map[string]interface{}{
-					"username": "Server",
-					"message":   fmt.Sprintf("%s left the room", username),
-				})
-
-				toRoom(room, message)
-			}
-
+			handleLeave(room, username)
 			mutex.Unlock()
+
 		case "message":
 			room, ok := msg["room"].(string)
 			if !ok || room == "" {
@@ -193,6 +189,20 @@ func (c *Client) readPump() {
 		}
 	}
 }
+
+func handleLeave(room string, username string) {
+	// if any clients are left in the room, send leaving message
+	if _, ok := rooms[room]; ok {
+		message, _ := json.Marshal(map[string]interface{}{
+			"username": "Server",
+			"type":     "leave",
+			"message":  fmt.Sprintf("%s left the room", username),
+		})
+
+		toRoom(room, message)
+	}
+}
+
 
 func (c *Client) writePump() {
 	for message := range c.send {
@@ -224,10 +234,11 @@ func createRoom(roomName string) {
 	}
 }
 
-func joinRoom(c *Client, roomName string) {
+func joinRoom(c *Client, roomName string, username string) {
 	createRoom(roomName)
 	rooms[roomName][c] = true
 	c.room = roomName
+	c.username = username
 }
 
 func leaveRoom(c *Client, roomName string) {

@@ -27,7 +27,17 @@ body {
     color: #fff;
     padding: 15px;
     text-align: center;
+    display: flex;
     font-size: 1.2em;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-header img{
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 10px;
 }
 
 /* Style for messages sent by the current user */
@@ -50,7 +60,14 @@ body {
     color: #838383;
     font-weight: bold;
     font-size: 0.8rem;
-    /* Green */
+}
+
+.chat-messages li.server.join {
+    color: #28a745;
+}
+
+.chat-messages li.server.leave {
+    color: #dc3545;
 }
 
 .chat-messages {

@@ -61,6 +61,11 @@ ws.onmessage = (message) => {
         li.classList.add('sent');
     } else if (data.username === 'Server') {
         li.classList.add('server');
+        if (data.type === 'join'){
+            li.classList.add('join');
+        } else if (data.type === 'leave'){
+            li.classList.add('leave');
+        }
     } else {
         li.classList.add('received');
     }
