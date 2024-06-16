@@ -127,32 +127,64 @@ func (c *Client) readPump() {
 		switch action {
 		case "join":
 			room, ok := msg["room"].(string)
-			if !ok {
+			if !ok || room == "" {
 				continue
 			}
+
+			username, ok := msg["username"].(string)
+			if !ok || username == "" {
+				continue
+			}
+
 			mutex.Lock()
 			leaveRoom(c, c.room)
 			joinRoom(c, room)
+
+			//send joining message to room
+			message, _ := json.Marshal(map[string]interface{}{
+				"username": "Server",
+				"message":   fmt.Sprintf("%s joined the room", username),
+			})
+
+			toRoom(room, message)
+
 			mutex.Unlock()
 		case "leave":
 			room, ok := msg["room"].(string)
-			if !ok {
+			if !ok || room == "" {
 				continue
 			}
+
+			username, ok := msg["username"].(string)
+			if !ok || username == "" {
+				continue
+			}
+
 			mutex.Lock()
 			leaveRoom(c, room)
+
+			//if any clients are left in the room, send leaving message
+			if _, ok := rooms[room]; ok {
+				message, _ := json.Marshal(map[string]interface{}{
+					"username": "Server",
+					"message":   fmt.Sprintf("%s left the room", username),
+				})
+
+				toRoom(room, message)
+			}
+
 			mutex.Unlock()
 		case "message":
 			room, ok := msg["room"].(string)
-			if !ok {
+			if !ok || room == "" {
 				continue
 			}
 			message, ok := msg["message"].(string)
-			if !ok {
+			if !ok || message == "" {
 				continue
 			}
 			username, ok := msg["username"].(string)
-			if !ok {
+			if !ok || username == "" {
 				username = "Anonymous"
 			}
 			//to JSON

@@ -44,6 +44,14 @@ body {
     /* Light grey */
 }
 
+.chat-messages li.server {
+    align-self: center;
+    background: none;
+    color: #838383;
+    font-weight: bold;
+    font-size: 0.8rem;
+    /* Green */
+}
 
 .chat-messages {
     flex: 1;
@@ -128,6 +136,12 @@ body {
 
 .room-form button:hover {
     background: #218838;
+}
+
+.room-form button:disabled {
+    background: #747474;
+    color: #fff;
+    cursor: not-allowed;
 }
 
 @media (max-width: 600px) {

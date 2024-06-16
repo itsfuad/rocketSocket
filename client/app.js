@@ -10,6 +10,16 @@ const roomName = document.getElementById('roomName');
 const actionButton = document.getElementById('actionButton');
 const roomHeader = document.getElementById('roomHeader');
 
+//on input change, update the action button disabled state
+roomName.addEventListener('input', () => {
+    actionButton.disabled = roomName.value.trim() === '' || usernameInput.value.trim() === '';
+});
+
+//on input change, update the action button disabled state
+usernameInput.addEventListener('input', () => {
+    actionButton.disabled = usernameInput.value.trim() === '' || roomName.value.trim() === '';
+});
+
 form.addEventListener('submit', (event) => {
     event.preventDefault();
     
@@ -49,6 +59,8 @@ ws.onmessage = (message) => {
     // Apply different styling based on sender or receiver
     if (data.username === usernameInput.value) {
         li.classList.add('sent');
+    } else if (data.username === 'Server') {
+        li.classList.add('server');
     } else {
         li.classList.add('received');
     }
@@ -69,7 +81,7 @@ function sendMessage(msg, username) {
 }
 
 function joinRoom(room) {
-    const data = JSON.stringify({ action: 'join', room: room });
+    const data = JSON.stringify({ action: 'join', room: room, username: usernameInput.value });
     ws.send(data);
     currentRoom = room;
     clearMessages();
@@ -77,17 +89,25 @@ function joinRoom(room) {
     actionButton.style.backgroundColor = '#dc3545';
     actionButton.textContent = 'Leave';
 
+    //disable room input and username input
+    roomName.disabled = true;
+    usernameInput.disabled = true;
+
     console.log(`Joined room: ${room}`);
 }
 
 function leaveRoom(room) {
-    const data = JSON.stringify({ action: 'leave', room: room });
+    const data = JSON.stringify({ action: 'leave', room: room, username: usernameInput.value });
     ws.send(data);
     currentRoom = 'default';
     clearMessages();
     roomHeader.textContent = 'Join a room to chat';
     actionButton.style.backgroundColor = '#28a745';
     actionButton.textContent = 'Join';
+
+    //enable room input and username input
+    roomName.disabled = false;
+    usernameInput.disabled = false;
 
     console.log(`Left room: ${room}`);
 }
