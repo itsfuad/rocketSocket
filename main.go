@@ -12,10 +12,10 @@ import (
 )
 
 type Client struct {
-    conn     *Conn
-    send     chan []byte
-    room     string
-    username string
+	conn *Conn
+	send chan []byte
+	room string
+	username string
 }
 
 type Conn struct {
@@ -32,14 +32,104 @@ var rooms = make(map[string]map[*Client]bool)
 var broadcast = make(chan []byte)
 var mutex = &sync.Mutex{}
 
-func main() {
+type EventCallback func(c *Client, msg map[string]interface{})
 
+var eventCallbacks = make(map[string][]EventCallback)
+
+func on(event string, callback EventCallback) {
+	eventCallbacks[event] = append(eventCallbacks[event], callback)
+}
+
+func handleJoinEvent(c *Client, msg map[string]interface{}) {
+	room, ok := msg["room"].(string)
+	if !ok || room == "" {
+		return
+	}
+
+	username, ok := msg["username"].(string)
+	if !ok || username == "" {
+		return
+	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	leaveRoom(c, c.room)
+	joinRoom(c, room, username)
+
+	// Send joining message to room
+	message, _ := json.Marshal(map[string]interface{}{
+		"username": "Server",
+		"type":     "join",
+		"message":  fmt.Sprintf("%s joined the room", username),
+	})
+
+	toRoom(room, message)
+}
+
+func handleLeaveEvent(c *Client, msg map[string]interface{}) {
+	room, ok := msg["room"].(string)
+	if !ok || room == "" {
+		return
+	}
+
+	username, ok := msg["username"].(string)
+	if !ok || username == "" {
+		return
+	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	leaveRoom(c, room)
+	handleLeave(room, username)
+
+	//if at least one client is left in the room, send leaving message
+	if _, ok := rooms[room]; !ok {
+		return
+	}
+
+	// Send leaving message to room
+	message, _ := json.Marshal(map[string]interface{}{
+		"username": "Server",
+		"type":     "leave",
+		"message":  fmt.Sprintf("%s left the room", username),
+	})
+
+	toRoom(room, message)
+}
+
+func handleMessageEvent(c *Client, msg map[string]interface{}) {
+	room, ok := msg["room"].(string)
+	if !ok || room == "" {
+		return
+	}
+	message, ok := msg["message"].(string)
+	if !ok || message == "" {
+		return
+	}
+	username, ok := msg["username"].(string)
+	if !ok || username == "" {
+		return
+	}
+	// to JSON
+	message = fmt.Sprintf(`{"username":"%s","message":"%s"}`, username, message)
+	toRoom(room, []byte(message))
+}
+
+// init function runs before main
+func init() {
+	on("join", handleJoinEvent)
+	on("leave", handleLeaveEvent)
+	on("message", handleMessageEvent)
+}
+
+func main() {
 	fs := http.FileServer(http.Dir("client"))
 
 	http.HandleFunc("/ws", handleConnections)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//make the client folder the serving directory so that js and css files can be served
 		fs.ServeHTTP(w, r)
 	})
 
@@ -126,69 +216,16 @@ func (c *Client) readPump() {
 		if !ok {
 			continue
 		}
-		switch action {
-		case "join":
-			room, ok := msg["room"].(string)
-			if !ok || room == "" {
-				continue
-			}
-
-			username, ok := msg["username"].(string)
-			if !ok || username == "" {
-				continue
-			}
-
-			mutex.Lock()
-			leaveRoom(c, c.room)
-			joinRoom(c, room, username)
-
-			//send joining message to room
-			message, _ := json.Marshal(map[string]interface{}{
-				"username": "Server",
-				"type": "join",
-				"message":   fmt.Sprintf("%s joined the room", username),
-			})
-
-			toRoom(room, message)
-
-			mutex.Unlock()
-		case "leave":
-
-			room, ok := msg["room"].(string)
-			if !ok || room == "" {
-				continue
-			}
-		
-			username, ok := msg["username"].(string)
-			if !ok || username == "" {
-				continue
-			}
-		
-			mutex.Lock()
-			
-			leaveRoom(c, room)
-			handleLeave(room, username)
-			mutex.Unlock()
-
-		case "message":
-			room, ok := msg["room"].(string)
-			if !ok || room == "" {
-				continue
-			}
-			message, ok := msg["message"].(string)
-			if !ok || message == "" {
-				continue
-			}
-			username, ok := msg["username"].(string)
-			if !ok || username == "" {
-				username = "Anonymous"
-			}
-			//to JSON
-			message = fmt.Sprintf(`{"username":"%s","message":"%s"}`, username, message)
-			toRoom(room, []byte(message))
+		callbacks, ok := eventCallbacks[action]
+		if !ok {
+			continue
+		}
+		for _, callback := range callbacks {
+			callback(c, msg)
 		}
 	}
 }
+
 
 func handleLeave(room string, username string) {
 	// if any clients are left in the room, send leaving message
