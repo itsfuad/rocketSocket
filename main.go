@@ -64,7 +64,9 @@ func handleJoinEvent(c *Client, msg map[string]interface{}) {
 		"message":  fmt.Sprintf("%s joined the room", username),
 	})
 
-	toRoom(room, message)
+	c.broadcastToRoom(message)
+	c.sendMessage([]byte(`{"username": "Server", "type":"HI","message":"Welcome to the room"}`))
+	c.sendMessage([]byte(`{"username": "Server", "type":"join","message":"You joined the room"}`))
 }
 
 func handleLeaveEvent(c *Client, msg map[string]interface{}) {
@@ -281,6 +283,7 @@ func joinRoom(c *Client, roomName string, username string) {
 func leaveRoom(c *Client, roomName string) {
 	if _, ok := rooms[roomName]; ok {
 		delete(rooms[roomName], c)
+		c.sendMessage([]byte(`{"username": "Server", "type":"BYE","message":"You left the room"}`))
 		if len(rooms[roomName]) == 0 {
 			delete(rooms, roomName)
 		}
@@ -291,6 +294,21 @@ func toRoom(roomName string, message []byte) {
 	if room, ok := rooms[roomName]; ok {
 		for client := range room {
 			client.send <- message
+		}
+	}
+}
+
+func (c *Client) sendMessage(message []byte) {
+	c.send <- message
+}
+
+//broadcast to all clients except the sender in the room
+func (c *Client) broadcastToRoom(message []byte) {
+	if room, ok := rooms[c.room]; ok {
+		for client := range room {
+			if client != c {
+				client.send <- message
+			}
 		}
 	}
 }

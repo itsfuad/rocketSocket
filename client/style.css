@@ -1,3 +1,9 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f9;
@@ -30,7 +36,7 @@ body {
     display: flex;
     font-size: 1.2em;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
 }
 
 .chat-header img{
@@ -126,9 +132,11 @@ body {
 }
 
 .room-form {
+    /* Fit within screen */
+    width: 100%;
     display: flex;
-    border-bottom: 1px solid #ddd;
-    padding: 10px;
+    padding: 5px;
+    gap: 5px;
     background: #fff;
 }
 
@@ -137,8 +145,8 @@ body {
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    margin-right: 10px;
     font-size: 1em;
+    width: 100%;
 }
 
 .room-form button {

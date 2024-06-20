@@ -1,5 +1,6 @@
 let currentRoom = 'global';
-const ws = new WebSocket('ws://localhost:8080/ws');
+
+const ws = new WebSocket('/ws')
 
 const form = document.getElementById('form');
 const message = document.getElementById('message');
@@ -37,6 +38,34 @@ actionButton.addEventListener('click', () => {
     }
 });
 
+function handleJoin(){
+    currentRoom = roomName.value;
+
+    clearMessages();
+    roomHeader.textContent = `Connected to Room: ${currentRoom}`;
+    actionButton.style.backgroundColor = '#dc3545';
+    actionButton.textContent = 'Leave';
+
+    //disable room input and username input
+    roomName.disabled = true;
+    usernameInput.disabled = true;
+
+    console.log(`Joined room: ${currentRoom}`);
+}
+
+function handleLeave(){
+    console.log(`Left room: ${currentRoom}`);
+    currentRoom = 'default';
+    clearMessages();
+    roomHeader.textContent = 'Join a room to chat';
+    actionButton.style.backgroundColor = '#28a745';
+    actionButton.textContent = 'Join';
+
+    //enable room input and username input
+    roomName.disabled = false;
+    usernameInput.disabled = false;
+}
+
 ws.onopen = (e) => {
     console.log('Connected to the server', e);
     //joinRoom(currentRoom); // Automatically join the default room on connection
@@ -65,6 +94,12 @@ ws.onmessage = (message) => {
             li.classList.add('join');
         } else if (data.type === 'leave'){
             li.classList.add('leave');
+        } else if (data.type === 'HI'){
+            handleJoin();
+            return;
+        } else if (data.type === 'BYE'){
+            handleLeave();
+            return;
         }
     } else {
         li.classList.add('received');
@@ -88,33 +123,11 @@ function sendMessage(msg, username) {
 function joinRoom(room) {
     const data = JSON.stringify({ action: 'join', room: room, username: usernameInput.value });
     ws.send(data);
-    currentRoom = room;
-    clearMessages();
-    roomHeader.textContent = `Connected to Room: ${room}`;
-    actionButton.style.backgroundColor = '#dc3545';
-    actionButton.textContent = 'Leave';
-
-    //disable room input and username input
-    roomName.disabled = true;
-    usernameInput.disabled = true;
-
-    console.log(`Joined room: ${room}`);
 }
 
 function leaveRoom(room) {
     const data = JSON.stringify({ action: 'leave', room: room, username: usernameInput.value });
     ws.send(data);
-    currentRoom = 'default';
-    clearMessages();
-    roomHeader.textContent = 'Join a room to chat';
-    actionButton.style.backgroundColor = '#28a745';
-    actionButton.textContent = 'Join';
-
-    //enable room input and username input
-    roomName.disabled = false;
-    usernameInput.disabled = false;
-
-    console.log(`Left room: ${room}`);
 }
 
 function clearMessages() {

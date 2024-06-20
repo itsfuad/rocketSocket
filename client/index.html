@@ -13,15 +13,17 @@
 
 <body>
     <div class="chat-container">
-        <div class="chat-header" id="roomHeader">
+        <div class="chat-header">
             <img src="favicon-mini.png" alt="Rocket Chat">
-            Join a room to chat
+            <div class="text" id="roomHeader">
+                Join a room to chat
+            </div>
         </div>
 
         <!-- Room Selection -->
         <div id="roomControls" class="room-form">
-            <input type="text" id="roomName" placeholder="Enter room name">
-            <input type="text" id="username" placeholder="Enter your username">
+            <input type="text" id="roomName" placeholder="Room">
+            <input type="text" id="username" placeholder="Username">
             <button id="actionButton" disabled>Join</button>
         </div>
 
