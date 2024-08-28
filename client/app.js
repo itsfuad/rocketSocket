@@ -84,7 +84,14 @@ ws.onmessage = (message) => {
     console.log('Received message:', message);
     const data = JSON.parse(message.data);
     const li = document.createElement('li');
-    li.innerText = `${data.username}: ${data.message}`;
+    const username = document.createElement('div');
+    username.classList.add('username');
+    username.innerText = data.username;
+    const msg = document.createElement('div');
+    msg.classList.add('msg');
+    msg.innerText = data.message;
+    li.appendChild(username);
+    li.appendChild(msg);
     // Apply different styling based on sender or receiver
     if (data.username === usernameInput.value) {
         li.classList.add('sent');
@@ -118,6 +125,8 @@ function sendMessage(msg, username) {
     });
     console.log('Sending message:', data);
     ws.send(data);
+    // Clear the message input field after sending
+    message.value = '';
 }
 
 function joinRoom(room) {

@@ -47,15 +47,13 @@ body {
 }
 
 /* Style for messages sent by the current user */
-.chat-messages li.sent {
-    align-self: flex-end;
+.chat-messages li.sent .msg {
     background-color: #007bff;
     /* Light green */
 }
 
 /* Style for messages received from other users */
-.chat-messages li.received {
-    align-self: flex-start;
+.chat-messages li.received .msg {
     background-color: #595959;
     /* Light grey */
 }
@@ -64,15 +62,18 @@ body {
     align-self: center;
     background: none;
     color: #838383;
+    display: flex;
     font-weight: bold;
     font-size: 0.8rem;
+    flex-direction: column;
+    align-items: center;
 }
 
-.chat-messages li.server.join {
+.chat-messages li.server.join .msg {
     color: #28a745;
 }
 
-.chat-messages li.server.leave {
+.chat-messages li.server.leave .msg {
     color: #dc3545;
 }
 
@@ -93,10 +94,26 @@ body {
 
 .chat-messages li {
     margin-bottom: 10px;
-    padding: 10px;
-    background: #007bff;
     color: #fff;
     border-radius: 5px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.chat-messages li.received {
+    align-items: flex-start;
+}
+
+.username {
+    color: #007bff;
+}
+
+.chat-messages li .msg {
+    color: #fff;
+    padding: 10px;
+    border-radius: 10px;
     width: fit-content;
     max-width: 80%;
 }
